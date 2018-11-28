@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+  <dict>
+	<key>guanqia</key>
+	<string>关卡</string>
+    
+  <key>mubiao</key>
+  <string>目标</string>
+  
+  <key>fen</key>
+  <string>分</string>
+  
+  <key>highestScore</key>
+  <string>历史最高分</string>
+  
+  <key>lianji</key>
+  <string>连击增加</string>
+  
+  <key>shengyu</key>
+  <string>剩余</string>
+  
+  <key>ge</key>
+  <string>个</string>
+  
+  <key>jiangli</key>
+  <string>奖励</string>
+  
+  <key>info0</key>
+		<string>《健康游戏忠告》</string>
+	<key>info1</key>
+		<string>抵制不良游戏 拒绝盗版游戏 注意自我保护 谨防受骗上当</string>
+	<key>info2</key>
+		<string>适度游戏益脑 沉迷游戏伤身 合理安排时间 享受健康生活</string>
+	<key>info3</key>
+		<string>游戏著作权人：杭州科迪网络科技有限公司</string>
+	<key>info4</key>
+		<string>出版服务单位：北京幻方朗睿软件科技有限公司</string>
+	<key>info5</key>
+		<string>批准文号：新广出审[2017]1714号</string>
+	<key>info6</key>
+		<string>出版物号：ISBN978-7-7979-5299-6</string>
+	<key>info7</key>
+		<string>备案文号：文网游备字｛2017｝M-CSG 3062</string>
+  
+</dict>
+
+</array>
+</plist>
