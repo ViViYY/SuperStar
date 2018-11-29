@@ -1298,6 +1298,9 @@
       "__id__": 2
     },
     "_enabled": true,
+    "tipsPrefab": {
+      "__uuid__": "4e2e910a-1ec3-48c7-811d-331267c67115"
+    },
     "_id": "c79fHv/FZMobHL6srTpoH1"
   }
 ]

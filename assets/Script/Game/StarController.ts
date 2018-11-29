@@ -11,7 +11,7 @@ export class StarController extends cc.Component {
     starPrefab: cc.Prefab = null;
 
     _gameState = Define.GameState.init;
-    _starList: Array<Star> = [];
+    _starList: Star[][] = [];
     private starSelect: Star = null;
     _starSameLinkList: Star[] = [];
 
@@ -20,7 +20,7 @@ export class StarController extends cc.Component {
         this.node.parent.on(cc.Node.EventType.TOUCH_END, this.onTouchEnd, this);
     }
     
-    private onTouchStart (event: cc.Touch):void {
+    private onTouchStart(event: cc.Touch):void {
         if( this._gameState != Define.GameState.wait ){
             return;
         }
@@ -29,7 +29,7 @@ export class StarController extends cc.Component {
         const yIndex = Math.floor(event.getLocation().y / Define.StarHeight);
         this.onStarTouchStart(xIndex, yIndex);
     }
-    private onTouchEnd (event):void {
+    private onTouchEnd(event):void {
         if( this._gameState != Define.GameState.wait ){
             return;
         }
@@ -57,7 +57,7 @@ export class StarController extends cc.Component {
         this.starUnSelectAll();
     }
 
-    private onStarTouchStart (_x: number, _y: number):void {
+    private onStarTouchStart(_x: number, _y: number):void {
         this.starSelect = this._starList[_x][_y];
         if(!this.starSelect){
             return;
@@ -97,7 +97,7 @@ export class StarController extends cc.Component {
         }
     }
     //消除
-    private eliminate (): void {
+    private eliminate(): void {
         if( this._starSameLinkList.length >= 2 ){
             for(let i: number = 0; i < this._starSameLinkList.length; i++){
                 let starEiminate: Star = this._starSameLinkList[i];
@@ -108,7 +108,7 @@ export class StarController extends cc.Component {
         }
     }
     //移动(向下) && 刷新列表
-    private moveDownAndRefreshStarList (): void {
+    private moveDownAndRefreshStarList(): void {
         let elimateCount: number = 0;
         let maxMoveNumber = 0;
         for(let i = 0; i < Define.StarNumberV; i++){
@@ -146,7 +146,7 @@ export class StarController extends cc.Component {
     }
 
     //移动(向左) && 刷新列表
-    private moveLeftAndRefreshStarList (): void {
+    private moveLeftAndRefreshStarList(): void {
         cc.log('检测动-向左');
         // 遍历列
         for(let i = 0; i < Define.StarNumberH - 1; i++){
@@ -219,7 +219,9 @@ export class StarController extends cc.Component {
     }
 
     //检测游戏是否结束
-    private checkGameOver (): boolean {
+    private checkGameOver(): boolean {
+        //保存数据
+        GameData.getInstance().saveCurrentData(this.getStarPattern());
         for(let i: number = 0; i < Define.StarNumberV; i++){
             for(let j: number = 0; j < Define.StarNumberH; j++){
                 let star: Star = this._starList[i][j];
@@ -252,7 +254,7 @@ export class StarController extends cc.Component {
     }
 
     //游戏结束
-    private gameOver (): void {
+    private gameOver(): void {
         cc.log('gameOver');
         this._gameState = Define.GameState.over;
         this.checkAward();
@@ -270,7 +272,7 @@ export class StarController extends cc.Component {
             }
         }
         cc.log('检测奖励,剩余个数：' + num);
-        if(num < 10){
+        if(num < 10 + 100){
             cc.log('额外奖励:' + num);
             setTimeout(() => {
                 this.getAwardOne();
@@ -295,21 +297,26 @@ export class StarController extends cc.Component {
 
     //一个一个领取额外奖励
     private getAwardOne(): void{
+        cc.log("getAwardOne");
         let b: boolean = false;
         for(let i: number = 0; i < Define.StarNumberV; i++){
             for(let j: number = 0; j < Define.StarNumberH; j++){
                 let star: Star = this._starList[i][j];
                 if(star){
                     star.clean();
+                    this._starList[i][j] = null;
                     b = true;
                     break;
                 }
+            }
+            if(b){
+                break;
             }
         }
         if(b){
             setTimeout(() => {
                 this.getAwardOne();
-            }, 1000);
+            }, 100);
         } else {
             this.gotoNext();
         }
@@ -330,7 +337,9 @@ export class StarController extends cc.Component {
         for(let i: number = 0; i < Define.StarNumberV; i++){
             for(let j: number = 0; j < Define.StarNumberH; j++){
                 let star: Star = this._starList[i][j];
-                star.clean();
+                if(star){
+                    star.clean();
+                }
             }
         }
     }
@@ -346,7 +355,58 @@ export class StarController extends cc.Component {
         }
     }
 
-    public initStar = function():void {
+    public initStar(): void {
+        if( GameData.getInstance().isNewGame ){
+            this.createStarsRandom();
+        } else {
+            //读取记录
+            let starPattern = GameData.getInstance().starPattern;
+            // starPattern = "3#4#1#3#4#2#3#2#-1#-1#1#2#-1#-1#-1#-1#-1#-1#-1#-1#1#1#-1#-1#-1#-1#-1#-1#-1#-1#4#-1#-1#-1#-1#-1#-1#-1#-1#-1#0#-1#-1#-1#-1#-1#-1#-1#-1#-1#1#-1#-1#-1#-1#-1#-1#-1#-1#-1#3#0#1#-1#-1#-1#-1#-1#-1#-1#2#3#4#2#3#-1#-1#-1#-1#-1#3#4#1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#";
+            if(starPattern.length === 0){
+                this.createStarsRandom();
+            } else {
+                // cc.log("starPattern = " + starPattern);
+                let strsList: string[] = starPattern.split('#');
+                // cc.log('strsList = ' + strsList.length);
+                // cc.log('strsList = ' + strsList);
+                for(let i: number = 0; i < Define.StarNumberV; i++){
+                    this._starList[i] = [];
+                }
+                for(let i = 0; i < strsList.length; i++){
+                    let t: number = parseInt(strsList[i]);
+                    let xIndex: number = Math.floor(i / Define.StarNumberH);
+                    let yIndex: number = i % Define.StarNumberH;
+                    if(xIndex >= Define.StarNumberH){
+                        break;
+                    }
+                    // cc.log('i = ' + i + 't = ' + t + ' - xIndex:' + xIndex + ' - yIndex:' + yIndex);
+                    if(-1 === t){
+                        this._starList[xIndex][yIndex] = null;
+                    } else {
+                        let starNode = cc.instantiate(this.starPrefab);
+                        starNode.parent = this.node;
+                        starNode.getComponent('Star').init(t, xIndex, yIndex, Define.StarInitMoveV);
+                        this._starList[xIndex].push(starNode.getComponent('Star'));
+                    }
+                }
+            }
+        }
+        
+        const timeCost = Define.StarInitMoveV / Define.StarMoveSpeed;
+        setTimeout(() => {
+           this._gameState = Define.GameState.wait; 
+        }, timeCost);
+        // 检测结束
+        if(this.checkGameOver()){
+            this.gameOver();
+        } else {
+            cc.log('可移动');
+            this._gameState = Define.GameState.wait;
+        }
+    }
+
+    private createStarsRandom(): void{
+        // 随机产生
         for(let i: number = 0; i < Define.StarNumberV; i++){
             this._starList[i] = [];
             for(let j: number = 0; j < Define.StarNumberH; j++){
@@ -356,10 +416,22 @@ export class StarController extends cc.Component {
                 this._starList[i].push(starNode.getComponent('Star'));
             }
         }
-        const timeCost = Define.StarInitMoveV / Define.StarMoveSpeed;
-        setTimeout(() => {
-           this._gameState = Define.GameState.wait; 
-        }, timeCost);
+    }
+    
+    //组合星星数据
+    private getStarPattern(): string{
+        let pattern: string = "";
+        for(let i: number = 0; i < Define.StarNumberV; i++){
+            for(let j: number = 0; j < Define.StarNumberH; j++){
+                let star: Star = this._starList[i][j];
+                if(star){
+                    pattern += star.type + "#";
+                } else {
+                    pattern += "-1#";
+                }
+            }
+        }
+        return pattern;
     }
 
 }

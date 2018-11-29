@@ -27,6 +27,9 @@ export class Game extends cc.Component {
     @property(cc.Node)
     passNode: cc.Node = null;
 
+    @property(cc.Prefab)
+    pausePrefab: cc.Prefab = null;
+
 
     onLoad (){
         this.passNode.active = false;
@@ -45,6 +48,7 @@ export class Game extends cc.Component {
 
     //到下一关的动画
     private gotoNextChapter(): void{
+        GameData.getInstance().isNewGame = true;
         this.startGame();
     }
 
@@ -84,7 +88,10 @@ export class Game extends cc.Component {
 
     onPause (): void {
         cc.log('onPause');
-        GameData.getInstance().printHistory();
+        // GameData.getInstance().removeStorageData();
+        let pauseNode: cc.Node = cc.instantiate(this.pausePrefab);
+        pauseNode.parent = this.node;
+        pauseNode.zIndex = 200;
     }
 
 
