@@ -36,11 +36,14 @@ export class GameData {
     constructor() {
 
     }
-    public reset(): void {
+    public reset(save: boolean = false): void {
         cc.log("reset当前数据");
         this.chapter = 1;
         this.score = 0;
         this._starPattern = "";
+        if(save){
+            this.saveCurrentData("");
+        }
     }
     //注意，Singleton是要替换成你自己实现的子类 这里没有实际的作用
     private static instance: GameData = null;
@@ -54,6 +57,11 @@ export class GameData {
             this.instance = new GameData();
         }
         return this.instance;
+    }
+
+    //是否过关
+    public isChapterPass(): boolean{
+        return this.score >= this.getTargetScore();
     }
 
     //关卡结束

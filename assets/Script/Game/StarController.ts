@@ -24,30 +24,38 @@ export class StarController extends cc.Component {
         if( this._gameState != Define.GameState.wait ){
             return;
         }
+        let touchStartLocation = this.node.convertToNodeSpace(event.getLocation());
         this.starUnSelectAll();
-        const xIndex = Math.floor(event.getLocation().x / Define.StarWidth);
-        const yIndex = Math.floor(event.getLocation().y / Define.StarHeight);
+        const xIndex = Math.floor(touchStartLocation.x / Define.StarWidth);
+        const yIndex = Math.floor(touchStartLocation.y / Define.StarHeight);
         this.onStarTouchStart(xIndex, yIndex);
     }
     private onTouchEnd(event):void {
         if( this._gameState != Define.GameState.wait ){
             return;
         }
+        let touchStartLocation = this.node.convertToNodeSpace(event.getLocation());
         //检测消除
-        const xIndex = Math.floor(event.getLocation().x / Define.StarWidth);
-        const yIndex = Math.floor(event.getLocation().y / Define.StarHeight);
+        const xIndex = Math.floor(touchStartLocation.x / Define.StarWidth);
+        const yIndex = Math.floor(touchStartLocation.y / Define.StarHeight);
+        if(xIndex >=  Define.StarNumberH || xIndex < 0){
+            return;
+        }
         let starTouchEnd: Star = this._starList[xIndex][yIndex];
         if(starTouchEnd && starTouchEnd === this.starSelect){
             this.eliminate();
             let eliminateCount = this._starSameLinkList.length;
-            //是否过关
-            let b1: boolean = GameData.getInstance().score >= GameData.getInstance().getTargetScore();
-            let scoreAdd = 5 * eliminateCount * eliminateCount;
-            GameData.getInstance().addScore(scoreAdd);
-            cc.director.emit("score-refresh", scoreAdd);
-            let b2: boolean = GameData.getInstance().score >= GameData.getInstance().getTargetScore();
-            if(!b1 && b2){
-                cc.director.emit("chapter-pass");
+            if( eliminateCount > 1 ){
+                //是否过关
+                let b1: boolean = GameData.getInstance().score >= GameData.getInstance().getTargetScore();
+                let scoreAdd = 5 * eliminateCount * eliminateCount;
+                GameData.getInstance().addScore(scoreAdd);
+                cc.log('得分:' + scoreAdd);
+                cc.director.emit("score-refresh", scoreAdd);
+                let b2: boolean = GameData.getInstance().score >= GameData.getInstance().getTargetScore();
+                if(!b1 && b2){
+                    cc.director.emit("chapter-pass");
+                }
             }
         }
         starTouchEnd = null;
@@ -58,6 +66,11 @@ export class StarController extends cc.Component {
     }
 
     private onStarTouchStart(_x: number, _y: number):void {
+        cc.log('_x' + _x);
+        cc.log('_y' + _y);
+        if(_x >=  Define.StarNumberH || _x < 0){
+            return;
+        }
         this.starSelect = this._starList[_x][_y];
         if(!this.starSelect){
             return;
@@ -160,16 +173,23 @@ export class StarController extends cc.Component {
             }
             //该列空白,移动右边的星星
             if(empty){
+                let haveStarMove: boolean = false;
                 for(let m = i + 1; m < Define.StarNumberH; m++){
                     for(let n = 0; n < Define.StarNumberV; n++){
                         let starMove: Star = this._starList[m][n];
                         if(!starMove){
                             continue;
                         }
+                        if(!haveStarMove){
+                            haveStarMove = true;
+                        }
                         starMove.moveLeftCount();
                         this._starList[m][n] = null;
                         this._starList[starMove.x][n] = starMove;
                     }
+                }
+                if( haveStarMove ){
+                    i--;
                 }
             }
         }
@@ -209,7 +229,9 @@ export class StarController extends cc.Component {
             }, timeCost * 1000 + 50);
         } else {
             if(this.checkGameOver()){
-                this.gameOver();
+                setTimeout(() => {
+                    this.gameOver();
+                }, 1000);
             } else {
                 cc.log('可移动');
                 this._gameState = Define.GameState.wait;
@@ -260,8 +282,8 @@ export class StarController extends cc.Component {
         this.checkAward();
     }
 
-    //检测奖励
-    private checkAward(): void{
+    //获取剩余个数
+    private getNumberLeft(): number{
         let num = 0;
         for(let i: number = 0; i < Define.StarNumberV; i++){
             for(let j: number = 0; j < Define.StarNumberH; j++){
@@ -271,9 +293,17 @@ export class StarController extends cc.Component {
                 }
             }
         }
-        cc.log('检测奖励,剩余个数：' + num);
-        if(num < 10 + 100){
-            cc.log('额外奖励:' + num);
+        return num;
+    }
+
+    //检测奖励
+    private checkAward(): void{
+        let num = this.getNumberLeft();
+        if(num < Define.AwardMap.length){
+            let scoreAdd = Define.AwardMap[num];
+            cc.log('额外奖励:' + scoreAdd);
+            GameData.getInstance().addScore(scoreAdd);
+            cc.director.emit("score-refresh", scoreAdd);
             setTimeout(() => {
                 this.getAwardOne();
             }, 1000);
@@ -291,7 +321,7 @@ export class StarController extends cc.Component {
                 setTimeout(() => {
                     this.gotoNext();
                 }, 1000);
-            }, 2000);
+            }, 1000);
         }
     }
 
@@ -324,7 +354,6 @@ export class StarController extends cc.Component {
 
     //进去下一关
     private gotoNext(): void{
-        GameData.getInstance().chapterEnd();
         cc.director.emit("chapter-start");
     }
 
@@ -361,7 +390,7 @@ export class StarController extends cc.Component {
         } else {
             //读取记录
             let starPattern = GameData.getInstance().starPattern;
-            // starPattern = "3#4#1#3#4#2#3#2#-1#-1#1#2#-1#-1#-1#-1#-1#-1#-1#-1#1#1#-1#-1#-1#-1#-1#-1#-1#-1#4#-1#-1#-1#-1#-1#-1#-1#-1#-1#0#-1#-1#-1#-1#-1#-1#-1#-1#-1#1#-1#-1#-1#-1#-1#-1#-1#-1#-1#3#0#1#-1#-1#-1#-1#-1#-1#-1#2#3#4#2#3#-1#-1#-1#-1#-1#3#4#1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#";
+            // starPattern = "3#4#1#3#4#-1#-1#-1#-1#-1#1#-1#-1#-1#-1#-1#-1#-1#-1#-1#1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#-1#";
             if(starPattern.length === 0){
                 this.createStarsRandom();
             } else {
@@ -396,6 +425,10 @@ export class StarController extends cc.Component {
         setTimeout(() => {
            this._gameState = Define.GameState.wait; 
         }, timeCost);
+        //检测是否过关
+        if( GameData.getInstance().score >= GameData.getInstance().getTargetScore() ){
+            cc.director.emit("chapter-pass");
+        }
         // 检测结束
         if(this.checkGameOver()){
             this.gameOver();

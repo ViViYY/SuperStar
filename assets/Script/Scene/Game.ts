@@ -30,6 +30,11 @@ export class Game extends cc.Component {
     @property(cc.Prefab)
     pausePrefab: cc.Prefab = null;
 
+    @property(cc.Node)
+    chapterPass: cc.Node = null;
+
+    sx: number = 1;
+    sy: number = 1;
 
     onLoad (){
         this.passNode.active = false;
@@ -38,6 +43,38 @@ export class Game extends cc.Component {
         cc.director.on("score-refresh", this.scoreRefresh, this);
         cc.director.on("chapter-pass", this.pass, this);
         this.startGame();
+        if(cc.sys.isBrowser){
+
+        } else {
+            this.getWindowProperty();
+        }
+    }
+
+    private getWindowProperty ():void{
+        let visibleSize: cc.Size;
+        if(cc.sys.platform === cc.sys.ANDROID){
+            visibleSize = cc.view.getFrameSize();
+        } else if(cc.sys.platform === cc.sys.IPHONE){
+            visibleSize = cc.view.getFrameSize();
+        } else if(cc.sys.platform === cc.sys.WECHAT_GAME){
+            visibleSize = cc.view.getCanvasSize();
+        } else if(cc.sys.isBrowser){
+            visibleSize = cc.view.getCanvasSize();
+        } else {
+            visibleSize = cc.view.getVisibleSize();
+        }
+        let designSize: cc.Size = cc.view.getDesignResolutionSize();
+        let p1: number = designSize.width / designSize.height;
+        let p2: number = visibleSize.width / visibleSize.height;
+        cc.view.setDesignResolutionSize(designSize.width, designSize.height, cc.ResolutionPolicy.SHOW_ALL);
+        //真实运行环境比较宽
+        if(p1 < p2){
+            this.sx = visibleSize.width / (visibleSize.height / designSize.height * designSize.width);
+        } else {
+            this.sy = visibleSize.height / (visibleSize.width / designSize.width * designSize.height);
+        }
+        this.node.scaleX = this.sx;
+        this.node.scaleY = this.sy;
     }
 
     onDestroy (){
@@ -48,8 +85,29 @@ export class Game extends cc.Component {
 
     //到下一关的动画
     private gotoNextChapter(): void{
-        GameData.getInstance().isNewGame = true;
-        this.startGame();
+        //是否过关
+        let b: boolean = GameData.getInstance().isChapterPass();
+        if( !b ){
+            this.chapterPass.getComponent("ChapterPass").showOver(() => {
+                GameData.getInstance().isNewGame = true;
+                this.gameover();
+            });
+            return;
+        }
+        //游戏数据进入下一关
+        GameData.getInstance().chapterEnd();
+        let chapter: number = GameData.getInstance().chapter;
+        let score: number = GameData.getInstance().getTargetScore();
+        this.chapterPass.getComponent("ChapterPass").showPass(chapter, score, () => {
+            GameData.getInstance().isNewGame = true;
+            this.startGame();
+        });
+    }
+
+    //游戏结束
+    private gameover(): void{
+        GameData.getInstance().reset(true);
+        cc.director.loadScene("welcome");
     }
 
     //过关
@@ -76,6 +134,7 @@ export class Game extends cc.Component {
     }
 
     private startGame(): void{
+        this.passNode.active = false;
         this.scoreRefresh();
         this.layerStar.getComponent('StarController').initStar();
     }

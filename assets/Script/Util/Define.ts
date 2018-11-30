@@ -27,4 +27,7 @@ export module Define {
         over: 3,
     })
 
+    export const AwardMap: number[] = [2000, 1980, 1920, 1820, 1680, 1500, 1280, 1020, 720, 380]
+
+
 }
