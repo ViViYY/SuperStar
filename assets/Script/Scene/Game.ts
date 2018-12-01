@@ -33,10 +33,27 @@ export class Game extends cc.Component {
     @property(cc.Node)
     chapterPass: cc.Node = null;
 
+    @property(cc.AudioSource)
+    bgMusic: cc.AudioSource = null;
+
+    @property(cc.Button)
+    musicOn: cc.Button = null;
+
+    @property(cc.Button)
+    musicOff: cc.Button = null;
+
+    @property(cc.AudioClip)
+    clipNextGameRound: cc.AudioClip = null;
+    @property(cc.AudioClip)
+    clipReadyGo: cc.AudioClip = null;
+
+    bgPlayed: boolean = false;
+
     sx: number = 1;
     sy: number = 1;
 
     onLoad (){
+        this.playBackgroundMusic();
         this.passNode.active = false;
         this.labelScoreAdd.node.opacity = 0;
         cc.director.on("chapter-start", this.gotoNextChapter, this);
@@ -48,6 +65,36 @@ export class Game extends cc.Component {
         } else {
             this.getWindowProperty();
         }
+    }
+
+    private playBackgroundMusic(): void{
+        let str: string = cc.sys.localStorage.getItem('superstar_music');
+        if(!str || str === "on"){
+            this.musicOn.node.active = false;
+            this.musicOff.node.active = true;
+            if( !this.bgPlayed ){
+                this.bgMusic.play(); 
+                this.bgPlayed = true;
+            } else {
+                this.bgMusic.resume();
+            }
+            GameData.getInstance().musicOpen = true;
+        } else {
+            this.musicOn.node.active = true;
+            this.musicOff.node.active = false;
+            this.bgMusic.pause();
+            GameData.getInstance().musicOpen = false;
+        }
+    }
+
+    public backgroundChange(event, customData): void {
+        cc.log(' customData = ' + customData);
+        if( customData === "off" ){
+            cc.sys.localStorage.setItem('superstar_music', "off");
+        } else if( customData === "on" ) {
+            cc.sys.localStorage.setItem('superstar_music', "on");
+        }
+        this.playBackgroundMusic();
     }
 
     private getWindowProperty ():void{
@@ -78,7 +125,7 @@ export class Game extends cc.Component {
     }
 
     onDestroy (){
-        cc.director.off("chapter-start", this.startGame, this);
+        cc.director.off("chapter-start", this.gotoNextChapter, this);
         cc.director.off("score-refresh", this.scoreRefresh, this);
         cc.director.off("chapter-pass", this.pass, this);
     }
@@ -94,6 +141,7 @@ export class Game extends cc.Component {
             });
             return;
         }
+        this.playMusic(this.clipNextGameRound, 1);
         //游戏数据进入下一关
         GameData.getInstance().chapterEnd();
         let chapter: number = GameData.getInstance().chapter;
@@ -137,6 +185,7 @@ export class Game extends cc.Component {
         this.passNode.active = false;
         this.scoreRefresh();
         this.layerStar.getComponent('StarController').initStar();
+        this.playMusic(this.clipReadyGo, 3);
     }
 
     private checkPass(): void{
@@ -151,6 +200,12 @@ export class Game extends cc.Component {
         let pauseNode: cc.Node = cc.instantiate(this.pausePrefab);
         pauseNode.parent = this.node;
         pauseNode.zIndex = 200;
+    }
+
+    private playMusic(_clip: cc.AudioClip, volume: number): void{
+        if(GameData.getInstance().musicOpen){
+            cc.audioEngine.play(_clip, false, volume);
+        }
     }
 
 

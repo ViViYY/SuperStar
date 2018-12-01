@@ -1,5 +1,5 @@
 import { Define } from './../Util/Define';
-
+import { GameData } from './../Util/GameData';
 
 
 const {ccclass, property} = cc._decorator;
@@ -45,6 +45,11 @@ export class Star extends cc.Component {
     @property(cc.Sprite)
     selectPic: cc.Sprite = null;
 
+    @property(cc.AudioClip)
+    clipLanding: cc.AudioClip = null;
+    @property(cc.AudioClip)
+    clipPop: cc.AudioClip = null;
+
     _moveLeftCount: number = 0;
 
     onLoad () {
@@ -85,6 +90,7 @@ export class Star extends cc.Component {
     }
 
     public clean (): void {
+        this.playMusic(this.clipPop, 1);
         this.showParticleEffect();
         this.node.destroy();
     }
@@ -125,8 +131,8 @@ export class Star extends cc.Component {
         const timeCostLeft = disLeft / Define.StarMoveSpeed;
         let acLeft: cc.FiniteTimeAction = cc.moveTo(timeCostLeft, cc.v2(target.x, target.y));
         //seq
-        const seq = cc.sequence(acDown, acLeft, cc.callFunc(function () {
-            
+        const seq = cc.sequence(acDown, acLeft, cc.callFunc( () => {
+            this.playMusic(this.clipLanding, 1);
         }));
         this.node.runAction(seq);
     }
@@ -192,6 +198,13 @@ export class Star extends cc.Component {
 
     private getDistance(v1:cc.Vec2, v2:cc.Vec2):number {
         return Math.sqrt((v1.x - v2.x) * (v1.x - v2.x) + (v1.y - v2.y) * (v1.y - v2.y));
+    }
+
+
+    private playMusic(_clip: cc.AudioClip, volume: number): void{
+        if(GameData.getInstance().musicOpen){
+            cc.audioEngine.play(_clip, false, volume);
+        }
     }
     
 }

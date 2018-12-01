@@ -10,6 +10,17 @@ export class StarController extends cc.Component {
     @property(cc.Prefab)
     starPrefab: cc.Prefab = null;
 
+    @property(cc.AudioClip)
+    clipSelect: cc.AudioClip = null;
+    @property(cc.AudioClip)
+    clipBeep: cc.AudioClip = null;
+    @property(cc.AudioClip)
+    clipCombo1: cc.AudioClip = null;
+    @property(cc.AudioClip)
+    clipCombo2: cc.AudioClip = null;
+    @property(cc.AudioClip)
+    clipCombo3: cc.AudioClip = null;
+
     _gameState = Define.GameState.init;
     _starList: Star[][] = [];
     private starSelect: Star = null;
@@ -56,6 +67,7 @@ export class StarController extends cc.Component {
                 if(!b1 && b2){
                     cc.director.emit("chapter-pass");
                 }
+                cc.director.emit('elimate-effect', eliminateCount);
             }
         }
         starTouchEnd = null;
@@ -107,6 +119,11 @@ export class StarController extends cc.Component {
         for(let i: number = 0; i < this._starSameLinkList.length; i++){
             let starSameLink: Star = this._starSameLinkList[i];
             starSameLink.beSelect();
+        }
+        if( this._starSameLinkList.length > 1 ){
+            this.playMusic(this.clipSelect, 1);
+        } else {
+            this.playMusic(this.clipBeep, 1);
         }
     }
     //消除
@@ -398,8 +415,10 @@ export class StarController extends cc.Component {
                 let strsList: string[] = starPattern.split('#');
                 // cc.log('strsList = ' + strsList.length);
                 // cc.log('strsList = ' + strsList);
+                let columnDy: number[] = [];
                 for(let i: number = 0; i < Define.StarNumberV; i++){
                     this._starList[i] = [];
+                    columnDy[i] = 0;
                 }
                 for(let i = 0; i < strsList.length; i++){
                     let t: number = parseInt(strsList[i]);
@@ -412,9 +431,10 @@ export class StarController extends cc.Component {
                     if(-1 === t){
                         this._starList[xIndex][yIndex] = null;
                     } else {
+                        columnDy[xIndex] += Math.random() * 20 + 20;
                         let starNode = cc.instantiate(this.starPrefab);
                         starNode.parent = this.node;
-                        starNode.getComponent('Star').init(t, xIndex, yIndex, Define.StarInitMoveV);
+                        starNode.getComponent('Star').init(t, xIndex, yIndex, Define.StarInitMoveV + columnDy[xIndex]);
                         this._starList[xIndex].push(starNode.getComponent('Star'));
                     }
                 }
@@ -439,15 +459,21 @@ export class StarController extends cc.Component {
     }
 
     private createStarsRandom(): void{
+        let columnDy: number[] = [];
+        for(let n = 0; n < Define.StarNumberH; n++){
+            this._starList[n] = [];
+            columnDy[n] = 0;
+        }
         // 随机产生
         for(let i: number = 0; i < Define.StarNumberV; i++){
-            this._starList[i] = [];
             for(let j: number = 0; j < Define.StarNumberH; j++){
+                columnDy[i] += Math.random() * 20 + 20;
                 let starNode = cc.instantiate(this.starPrefab);
                 starNode.parent = this.node;
-                starNode.getComponent('Star').init(Math.floor(Math.random() * 5), i, j, Define.StarInitMoveV);
+                starNode.getComponent('Star').init(Math.floor(Math.random() * 5), i, j, Define.StarInitMoveV + columnDy[i]);
                 this._starList[i].push(starNode.getComponent('Star'));
             }
+            
         }
     }
     
@@ -467,4 +493,9 @@ export class StarController extends cc.Component {
         return pattern;
     }
 
+    private playMusic(_clip: cc.AudioClip, volume: number): void{
+        if(GameData.getInstance().musicOpen){
+            cc.audioEngine.play(_clip, false, volume);
+        }
+    }
 }

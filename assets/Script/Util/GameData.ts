@@ -31,6 +31,14 @@ export class GameData {
     public set isNewGame(v: boolean) {
         this._isNewGame = v;
     }
+    //声音开启
+    private _musicOpen: boolean = true;
+    public get musicOpen(): boolean {
+        return this._musicOpen;
+    }
+    public set musicOpen(v: boolean) {
+        this._musicOpen = v;
+    }
 
 
     constructor() {

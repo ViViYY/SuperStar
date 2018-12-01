@@ -14,7 +14,7 @@ export default class ChapterPass extends cc.Component {
     gameover: cc.Node = null;
 
 
-    load () {
+    onLoad () {
         this.node.setPosition(434, 86);
         this.hide();
     }

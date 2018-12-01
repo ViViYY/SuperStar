@@ -1,4 +1,5 @@
 import { GameData } from './../Util/GameData';
+import { Game } from './Game';
 
 const {ccclass, property} = cc._decorator;
 
@@ -8,18 +9,60 @@ export default class Welcome extends cc.Component {
     @property(cc.Prefab)
     tipsPrefab: cc.Prefab = null;
 
+    @property(cc.AudioSource)
+    bgMusic: cc.AudioSource = null;
+
+    @property(cc.Button)
+    musicOn: cc.Button = null;
+
+    @property(cc.Button)
+    musicOff: cc.Button = null;
+
     _tipSHow: boolean = false;
 
     sx: number = 1;
     sy: number = 1;
 
+    bgPlayed: boolean = false;
+
     onLoad () {
+        this.playBackgroundMusic();
         GameData.getInstance().loadCurrentData();
         if(cc.sys.isBrowser){
 
         } else {
             this.getWindowProperty();
         }
+    }
+
+    private playBackgroundMusic(): void{
+        let str: string = cc.sys.localStorage.getItem('superstar_music');
+        if(!str || str === "on"){
+            this.musicOn.node.active = false;
+            this.musicOff.node.active = true;
+            if( !this.bgPlayed ){
+                this.bgMusic.play(); 
+                this.bgPlayed = true;
+            } else {
+                this.bgMusic.resume();
+            }
+            GameData.getInstance().musicOpen = true;
+        } else {
+            this.musicOn.node.active = true;
+            this.musicOff.node.active = false;
+            this.bgMusic.pause();
+            GameData.getInstance().musicOpen = false;
+        }
+    }
+
+    public backgroundChange(event, customData): void {
+        cc.log(' customData = ' + customData);
+        if( customData === "off" ){
+            cc.sys.localStorage.setItem('superstar_music', "off");
+        } else if( customData === "on" ) {
+            cc.sys.localStorage.setItem('superstar_music', "on");
+        }
+        this.playBackgroundMusic();
     }
 
     private getWindowProperty ():void{
